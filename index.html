@@ -1024,25 +1024,32 @@ document.getElementById('bookingForm').addEventListener('submit', async function
     hour: '2-digit', minute: '2-digit'
   });
 
-  const text =
-    `💇‍♀️ *Новая запись с сайта*\n\n` +
-    `👤 *Имя:* ${name}\n` +
-    `📱 *Телефон:* ${phone}\n` +
-    (telegram ? `✈️ *Telegram:* ${telegram}\n` : '') +
-    `✨ *Услуга:* ${service}\n` +
-    (message ? `💬 *Комментарий:* ${message}\n` : '') +
-    `\n🕐 ${now}`;
+  let text = '💇‍♀️ Новая запись с сайта\n\n';
+  text += '👤 Имя: ' + name + '\n';
+  text += '📱 Телефон: ' + phone + '\n';
+  if (telegram) text += '✈️ Telegram: ' + telegram + '\n';
+  text += '✨ Услуга: ' + service + '\n';
+  if (message) text += '💬 Комментарий: ' + message + '\n';
+  text += '\n🕐 ' + now;
 
   try {
-    const resp = await fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
+    const resp = await fetch('https://api.telegram.org/bot' + TELEGRAM_BOT_TOKEN + '/sendMessage', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ chat_id: TELEGRAM_CHAT_ID, text, parse_mode: 'Markdown' })
+      body: JSON.stringify({ 
+        chat_id: TELEGRAM_CHAT_ID, 
+        text: text
+      })
     });
-    if (!resp.ok) throw new Error();
-    document.getElementById('bookingForm').style.display = 'none';
-    document.getElementById('formSuccess').classList.add('show');
-  } catch {
+    const data = await resp.json();
+    if (data.ok) {
+      document.getElementById('bookingForm').style.display = 'none';
+      document.getElementById('formSuccess').classList.add('show');
+    } else {
+      throw new Error(data.description || 'Ошибка отправки');
+    }
+  } catch (err) {
+    console.error('Telegram error:', err);
     alert('Не удалось отправить. Позвоните: +7 909 310-33-25');
     btn.disabled = false;
     btn.innerHTML = 'Записаться';
